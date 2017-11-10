@@ -26,6 +26,7 @@ def policy_eval(policy, env, discount_factor=1.0, theta=0.00001):
     return np.array(V)
 
 random_policy = np.ones([env.nS, env.nA]) / env.nA
-print(policy_eval(random_policy, env).reshape(shape))
+v = policy_eval(random_policy, env)
 
-
+expected_v = np.array([0, -14, -20, -22, -14, -18, -20, -20, -20, -20, -18, -14, -22, -20, -14, 0])
+np.testing.assert_array_almost_equal(v, expected_v, decimal=2)
