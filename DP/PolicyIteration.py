@@ -1,14 +1,15 @@
 import numpy as np
 import pprint
 import sys
+import math
 if "./" not in sys.path:
     sys.path.append("./")
 from lib.envs.gridworld import GridworldEnv
 
 pp = pprint.PrettyPrinter(indent=2)
-env = GridworldEnv([2, 2])
+env = GridworldEnv()
 
-def policy_eval(policy, env, discount_factor=1.0, theta=0.0001):
+def policy_eval(policy, env, discount_factor=1.0, theta=0.00001):
     """
     Evalueate a policy given an environment and a full description of the environment's dynamics.
 
@@ -63,30 +64,34 @@ def policy_improvment(env, policy_eval_fn=policy_eval, discount_factor=1.0):
     policy = np.ones([env.nS, env.nA]) / env.nA
     V = None
     while True:
-        isChanged = False
         print('@isChanged')
+        isChanged = False
         V = policy_eval(policy, env)
-        print('V', V)
         for s in range(env.nS):
             qs = []
+            max_qvalue = -math.inf
+            old_policy = np.array(policy[s])
             for a, _ in enumerate(policy[s]):
                 qvalue = 0
                 for prob, next_state, reward, done in env.P[s][a]:
-                    qvalue  += prob * (reward + discount_factor * V[s])
-                qs.append((a, qvalue))
-            # print('qs', qs)
-            max_a, _ = max(qs, key=lambda q: q[1])
-            if policy[s][a] != max_a: 
-                isChanged = True
+                    qvalue  += prob * (reward + discount_factor * V[next_state])
 
-            # for a, _ in enumerate(policy[s]):
-            #     policy[s][a] = 1 if a == max_a else 0
-            # print('policy', policy)
+                max_qvalue = qvalue if max_qvalue < qvalue else max_qvalue
+                qs.append(qvalue)
+
+            optimal_actions = np.array(qs) >= max_qvalue
+            policy[s] = optimal_actions / env.nA
+
+            if not np.array_equal(old_policy, policy[s]):
+                isChanged = True
 
         if isChanged == False:
             break
+
     return policy, V
 
 policy, v = policy_improvment(env)
 print('policy', policy)
 
+expected_v = np.array([ 0, -1, -2, -3, -1, -2, -3, -2, -2, -3, -2, -1, -3, -2, -1,  0])
+np.testing.assert_array_almost_equal(v, expected_v, decimal=2)
