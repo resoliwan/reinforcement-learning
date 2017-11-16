@@ -23,16 +23,23 @@ def policy_eval(policy, env, discount_factor=1.0, theta=0.00001):
     Returns:
         Vector of length env.nS representing the value function.
     """
+	# Start with a random (all 0) value function
     V = np.zeros(env.nS)
     while True:
         delta = 0
+        # For each state, perform a "full backup"
         for s in range(env.nS):
             v = 0
+            # Look at the possible next actions
             for a, action_prob in enumerate(policy[s]):
-                for prob, next_state, reward, done in env.P[s][a]:
+                # For each action, look at the possible next states...
+                for  prob, next_state, reward, done in env.P[s][a]:
+                    # Calculate the expected value
                     v += action_prob * prob * (reward + discount_factor * V[next_state])
+            # How much our value function changed (across any states)
             delta = max(delta, np.abs(v - V[s]))
             V[s] = v
+        # Stop evaluating once our value function change is below a threshold
         if delta < theta:
             break
     return np.array(V)
@@ -155,5 +162,5 @@ print("Reshaped Grid Value Function:")
 print(v.reshape(env.shape))
 print("")
 
-# expected_v = np.array([ 0, -1, -2, -3, -1, -2, -3, -2, -2, -3, -2, -1, -3, -2, -1,  0])
-# np.testing.assert_array_almost_equal(v, expected_v, decimal=2)
+expected_v = np.array([ 0, -1, -2, -3, -1, -2, -3, -2, -2, -3, -2, -1, -3, -2, -1,  0])
+np.testing.assert_array_almost_equal(v, expected_v, decimal=2)
