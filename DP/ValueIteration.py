@@ -21,25 +21,43 @@ def value_iteration(env, theta=0.0001, discount_factor=1):
     Returns:
 		A tuple (policy, V) of optimal policy and the optimal value function.
     """
-    V = np.zeros(env.nS)
-    policy = np.zeros([env.nS, env.nA])
 
+    def one_step_lookahead(state, V):
+        """
+        Helper function to caculate the value for all states in a given stateA.
+
+        Args:
+            state: The state to consider.
+            V: The value to use as an estimator, Vector of length env.nS
+
+        Returns:
+            A vector of length env.nA containing the expected value of each action.
+        """
+        A = np.zeros(env.nA)
+        for a in range(env.nA):
+            for prob, next_state, reward, done in env.P[s][a]:
+                A[a] += prob * (reward + discount_factor * V[next_state])
+        return A
+
+    V = np.zeros(env.nS)
     while True:
         delta = 0
         for s in range(env.nS):
-            action_values = np.zeros(env.nA)
-            for a in range(env.nA):
-                for prob, next_state, reward, done in env.P[s][a]:
-                    action_values[a] += prob * (reward + discount_factor * V[next_state])
-
-            best_a = np.argmax(action_values)
-            best_value = action_values[best_a]
-            delta = max(delta, np.abs(V[s] - best_value))
-            V[s] = best_value
-            policy[s] = np.eye(env.nA)[best_a]
-
+            # Do a one step lookahead to find the best action
+            A = one_step_lookahead(s, V)
+            best_action_value = np.max(A)
+            # Caculate delta across all state seen so far
+            delta = max(delta, np.abs(V[s] - best_action_value ))
+            V[s] = best_action_value        
         if delta < theta:
             break
+
+    # Create deterministic policy using the optival value function
+    policy = np.zeros([env.nS, env.nA])
+    for s in range(env.nS):
+        A = one_step_lookahead(s, V)
+        best_action = np.argmax(A)
+        policy[s, best_action] = 1.0
 
     return policy, V
 
