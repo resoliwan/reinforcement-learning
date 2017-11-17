@@ -25,7 +25,21 @@ def value_iteration(env, theta=0.0001, discount_factor=1):
     policy = np.zeros([env.nS, env.nA])
 
     while True:
-        break
+        delta = 0
+        for s in range(env.nS):
+            action_values = np.zeros(env.nA)
+            for a in range(env.nA):
+                for prob, next_state, reward, done in env.P[s][a]:
+                    action_values[a] += prob * (reward + discount_factor * V[next_state])
+
+            best_a = np.argmax(action_values)
+            best_value = action_values[best_a]
+            delta = max(delta, np.abs(V[s] - best_value))
+            V[s] = best_value
+            policy[s] = np.eye(env.nA)[best_a]
+
+        if delta < theta:
+            break
 
     return policy, V
 
