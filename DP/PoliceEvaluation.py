@@ -11,6 +11,19 @@ env = GridworldEnv(shape)
 # env.render()
 
 def policy_eval(policy, env, discount_factor=1.0, theta=0.00001):
+    """
+    Evalueate a policy given an environment and a full description of the environment's dynamics.
+
+    Args:
+        policy: [S, A] shaped matrix representing the policy.
+        env: OpenAI env. env.P represents transition probability of the environment.
+            env.P[s][a] is a (prob, next_state, reward, done) tuple.
+        theta: We stop evaluation one our value function changes is less than theta for all states.
+        dicount_factor: lambda discount_factor
+
+    Returns:
+        Vector of length env.nS representing the value function.
+    """
     V = np.zeros(env.nS)
     while True:
         delta = 0
