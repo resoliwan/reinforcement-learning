@@ -6,7 +6,7 @@ if "./" not in sys.path:
 from lib.envs.gridworld import GridworldEnv
 
 pp = pprint.PrettyPrinter(indent=2)
-env = GridworldEnv([2, 2])
+env = GridworldEnv()
 
 def policy_eval(policy, env, discount_factor=1.0, theta=0.0001):
     """
@@ -43,6 +43,12 @@ def policy_eval(policy, env, discount_factor=1.0, theta=0.0001):
 # expected_v = np.array([0, -14, -20, -22, -14, -18, -20, -20, -20, -20, -18, -14, -22, -20, -14, 0])
 # np.testing.assert_array_almost_equal(v, expected_v, decimal=2)
 
+def q(state, action, env, discount_factor, value_fn):
+    q = 0
+    for prob, next_state, reward, done in env.P[state][action]:
+        q += prob * (reward + discount_factor * value_fn[next_state])
+    return q
+
 def policy_improvment(env, policy_eval_fn=policy_eval, discount_factor=1.0):
     """
     Policy Improvment Algorithm. Iteratively evalutes and improves a policy
@@ -63,30 +69,34 @@ def policy_improvment(env, policy_eval_fn=policy_eval, discount_factor=1.0):
     policy = np.ones([env.nS, env.nA]) / env.nA
     V = None
     while True:
-        isChanged = False
-        print('@isChanged')
-        V = policy_eval(policy, env)
-        print('V', V)
+        V = policy_eval_fn(policy, env, discount_factor)
+        policy_stable = True
         for s in range(env.nS):
-            qs = []
-            for a, _ in enumerate(policy[s]):
-                qvalue = 0
-                for prob, next_state, reward, done in env.P[s][a]:
-                    qvalue  += prob * (reward + discount_factor * V[s])
-                qs.append((a, qvalue))
-            # print('qs', qs)
-            max_a, _ = max(qs, key=lambda q: q[1])
-            if policy[s][a] != max_a: 
-                isChanged = True
+            old_policy = np.copy(policy[s])
+            best_a = np.argmax([q(s, a, env, discount_factor, V) for a in range(env.nA)])
+            policy[s] = np.eye(env.nA)[best_a]
 
-            # for a, _ in enumerate(policy[s]):
-            #     policy[s][a] = 1 if a == max_a else 0
-            # print('policy', policy)
+            if not np.equal(old_policy, policy[s]).all():
+                policy_stable = False
 
-        if isChanged == False:
-            break
+        if policy_stable:
+            break;
+
     return policy, V
 
 policy, v = policy_improvment(env)
 print('policy', policy)
+print(np.argmax(policy, axis=1))
+print('Reshaped Grid Value Function (0=up, 1=right, 2=down, 3=left):')
+print(np.reshape(np.argmax(policy, axis=1), env.shape))
 
+print("Value Function:")
+print(v)
+print("")
+
+print("Reshaped Grid Value Function:")
+print(v.reshape(env.shape))
+print("")
+
+expected_v = np.array([ 0, -1, -2, -3, -1, -2, -3, -2, -2, -3, -2, -1, -3, -2, -1,  0])
+np.testing.assert_array_almost_equal(v, expected_v, decimal=2)
