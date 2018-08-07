@@ -20,7 +20,7 @@ VALID_ACTIONS = [0, 1, 2, 3]
 
 class StateProcessor():
     """
-    Processes a raw Atari iamges. Resizes it and converts it to grayscale.
+    Processes a raw Atari images. Resizes it and converts it to grayscale.
     """
     def __init__(self):
         # Build the Tensorflow graph
@@ -39,7 +39,7 @@ class StateProcessor():
             state: A [210, 160, 3] Atari RGB State
 
         Returns:
-            A processed [84, 84, 1] state representing grayscale values.
+            A processed [84, 84] state representing grayscale values.
         """
         return sess.run(self.output, { self.input_state: state })
 
@@ -95,7 +95,7 @@ class Estimator():
         gather_indices = tf.range(batch_size) * tf.shape(self.predictions)[1] + self.actions_pl
         self.action_predictions = tf.gather(tf.reshape(self.predictions, [-1]), gather_indices)
 
-        # Calcualte the loss
+        # Calculate the loss
         self.losses = tf.squared_difference(self.y_pl, self.action_predictions)
         self.loss = tf.reduce_mean(self.losses)
 
@@ -208,7 +208,7 @@ def deep_q_learning(sess,
                     batch_size=32,
                     record_video_every=50):
     """
-    Q-Learning algorithm for fff-policy TD control using Function Approximation.
+    Q-Learning algorithm for off-policy TD control using Function Approximation.
     Finds the optimal greedy policy while following an epsilon-greedy policy.
 
     Args:
@@ -224,7 +224,7 @@ def deep_q_learning(sess,
           the reply memory.
         update_target_estimator_every: Copy parameters from the Q estimator to the 
           target estimator every N steps
-        discount_factor: Lambda time discount factor
+        discount_factor: Gamma discount factor
         epsilon_start: Chance to sample a random action when taking an action.
           Epsilon is decayed over time and this is the start value
         epsilon_end: The final minimum value of epsilon after decaying is done
